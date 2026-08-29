@@ -72,7 +72,7 @@ export function AnalyticsView() {
     return (
       <div className="space-y-6">
         <Skeleton className="h-7 w-40" />
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-24 rounded-xl" />
           ))}
@@ -97,13 +97,13 @@ export function AnalyticsView() {
         <p className="text-sm text-muted-foreground">Deep dive into your trading performance</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatsCard title="Win Rate" value={`${winRate.toFixed(1)}%`} subtitle={`${totalTrades} trades`} icon={<Activity className="h-4 w-4" />} valueTone="default" />
         <StatsCard title="Total P&L" value={`${totalPnL >= 0 ? '+' : ''}${totalPnL.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}`} icon={<DollarSign className="h-4 w-4" />} valueTone={totalPnL >= 0 ? 'positive' : 'negative'} />
         <StatsCard title="Profit Factor" value={profitFactor === Infinity ? '∞' : profitFactor.toFixed(2)} icon={<TrendingUp className="h-4 w-4" />} valueTone={profitFactor >= 1 ? 'positive' : 'negative'} />
       </div>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatsCard title="Avg Win" value={`+${avgWin.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}`} icon={<ArrowUpRight className="h-4 w-4" />} valueTone="positive" />
         <StatsCard title="Avg Loss" value={`${avgLoss.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}`} icon={<ArrowDownRight className="h-4 w-4" />} valueTone="negative" />
         <StatsCard title="Largest Win" value={`+${largestWin.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}`} valueTone="positive" />
