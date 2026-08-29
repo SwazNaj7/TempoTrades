@@ -144,7 +144,8 @@ export async function uploadTrade(
     const supabase = await createClient();
 
     // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    const user = session?.user ?? null;
     if (authError || !user) {
       return { success: false, error: 'Not authenticated' };
     }
@@ -279,7 +280,8 @@ export async function getTrades(): Promise<ActionResult<Trade[]>> {
   try {
     const supabase = await createClient();
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    const user = session?.user ?? null;
     if (authError || !user) {
       return { success: false, error: 'Not authenticated' };
     }
@@ -312,7 +314,8 @@ export async function getTradeById(tradeId: string): Promise<ActionResult<Trade>
   try {
     const supabase = await createClient();
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    const user = session?.user ?? null;
     if (authError || !user) {
       return { success: false, error: 'Not authenticated' };
     }
@@ -351,7 +354,8 @@ export async function updateTrade(
   try {
     const supabase = await createClient();
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    const user = session?.user ?? null;
     if (authError || !user) {
       return { success: false, error: 'Not authenticated' };
     }
@@ -406,7 +410,8 @@ export async function deleteTrade(tradeId: string): Promise<ActionResult> {
   try {
     const supabase = await createClient();
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    const user = session?.user ?? null;
     if (authError || !user) {
       return { success: false, error: 'Not authenticated' };
     }
@@ -523,7 +528,8 @@ export async function getProfile(): Promise<ActionResult<{
   try {
     const supabase = await createClient();
     
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    const user = session?.user ?? null;
     if (authError || !user) {
       return { success: false, error: 'Not authenticated' };
     }
@@ -575,7 +581,8 @@ export async function updateProfile(data: { full_name?: string; username?: strin
   try {
     const supabase = await createClient();
     
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    const user = session?.user ?? null;
     if (authError || !user) {
       return { success: false, error: 'Not authenticated' };
     }
@@ -607,7 +614,8 @@ export async function uploadAvatar(formData: FormData): Promise<ActionResult<{ u
   try {
     const supabase = await createClient();
     
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: { session }, error: authError } = await supabase.auth.getSession();
+    const user = session?.user ?? null;
     if (authError || !user) {
       return { success: false, error: 'Not authenticated' };
     }
