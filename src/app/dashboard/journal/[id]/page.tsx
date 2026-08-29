@@ -62,6 +62,11 @@ export default async function TradeDetailPage({ params }: TradeDetailPageProps) 
         <div className="flex items-center gap-2">
           <GradeBadge grade={trade.setup_grade} />
           <ResultBadge result={trade.result} />
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/dashboard/journal/${trade.id}/edit`}>
+              Edit Trade
+            </Link>
+          </Button>
         </div>
       </div>
 
@@ -103,24 +108,6 @@ export default async function TradeDetailPage({ params }: TradeDetailPageProps) 
                 {format(new Date(trade.close_time), 'MMM d, yyyy h:mm a')}
               </span>
             </div>
-            {trade.entry_price && (
-              <>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Entry Price</span>
-                  <span className="font-mono">{trade.entry_price}</span>
-                </div>
-              </>
-            )}
-            {trade.exit_price && (
-              <>
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Exit Price</span>
-                  <span className="font-mono">{trade.exit_price}</span>
-                </div>
-              </>
-            )}
           </CardContent>
         </Card>
 

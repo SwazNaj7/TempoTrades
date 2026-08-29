@@ -55,6 +55,21 @@ export default async function DashboardPage() {
     (t) => new Date(t.created_at) >= oneWeekAgo
   ).length;
 
+  // Average risk:reward (only trades that have a value set)
+  const rrTrades = trades.filter(
+    (t) => t.risk_reward !== null && t.risk_reward !== undefined
+  );
+  const averageRiskReward =
+    rrTrades.length > 0
+      ? rrTrades.reduce((acc, t) => acc + (t.risk_reward as number), 0) / rrTrades.length
+      : 0;
+
+  // Average profit (signed profit_amount across all trades)
+  const averageProfit =
+    trades.length > 0
+      ? trades.reduce((acc, t) => acc + (t.profit_amount ?? 0), 0) / trades.length
+      : 0;
+
   // Calculate grade distribution
   const gradeDistribution: Record<SetupGrade, number> = {
     'A+': 0,
@@ -108,7 +123,7 @@ export default async function DashboardPage() {
           </p>
         </div>
         <Button asChild>
-          <Link href="/dashboard/journaling">
+          <Link href="/dashboard/trade">
             <Plus className="mr-2 h-4 w-4" />
             New Trade
           </Link>
@@ -121,6 +136,8 @@ export default async function DashboardPage() {
         winRate={winRate}
         averageGrade={averageGrade}
         thisWeekTrades={thisWeekTrades}
+        averageRiskReward={averageRiskReward}
+        averageProfit={averageProfit}
       />
 
       {/* Charts Grid */}
@@ -143,7 +160,7 @@ export default async function DashboardPage() {
           <div className="text-center py-12 text-muted-foreground">
             <p>No trades yet. Start logging your trades to see them here!</p>
             <Button asChild className="mt-4">
-              <Link href="/dashboard/journaling">Log Your First Trade</Link>
+              <Link href="/dashboard/trade">Log Your First Trade</Link>
             </Button>
           </div>
         ) : (

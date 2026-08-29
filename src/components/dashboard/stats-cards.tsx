@@ -11,6 +11,7 @@ interface StatsCardProps {
   icon?: React.ReactNode;
   trend?: 'up' | 'down' | 'neutral';
   trendValue?: string;
+  valueTone?: 'default' | 'positive' | 'negative';
   className?: string;
   children?: React.ReactNode;
 }
@@ -22,6 +23,7 @@ export function StatsCard({
   icon,
   trend,
   trendValue,
+  valueTone = 'default',
   className,
   children,
 }: StatsCardProps) {
@@ -43,7 +45,15 @@ export function StatsCard({
         )}
       </CardHeader>
       <CardContent>
-        <div className="text-3xl font-bold tracking-tight">{value}</div>
+        <div
+          className={cn(
+            'text-3xl font-bold tracking-tight',
+            valueTone === 'positive' && 'text-emerald-500',
+            valueTone === 'negative' && 'text-red-500'
+          )}
+        >
+          {value}
+        </div>
         {(subtitle || trendValue) && (
           <div className="flex items-center gap-2 mt-1">
             {trendValue && trend && (
@@ -143,6 +153,8 @@ interface DashboardStatsProps {
   winRate: number;
   averageGrade: string;
   thisWeekTrades: number;
+  averageRiskReward: number;
+  averageProfit: number;
 }
 
 export function DashboardStats({
@@ -150,9 +162,18 @@ export function DashboardStats({
   winRate,
   averageGrade,
   thisWeekTrades,
+  averageRiskReward,
+  averageProfit,
 }: DashboardStatsProps) {
+  const formattedRiskReward =
+    averageRiskReward > 0 ? `${averageRiskReward.toFixed(2)}R` : '—';
+  const formattedProfit = `${averageProfit >= 0 ? '+' : ''}${averageProfit.toLocaleString(
+    'en-US',
+    { style: 'currency', currency: 'USD' }
+  )}`;
+
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <StatsCard
         title="Total Trades"
         value={totalTrades}
@@ -179,6 +200,25 @@ export function DashboardStats({
         value={thisWeekTrades}
         icon={<TrendingUp className="h-4 w-4" />}
         subtitle="Trades logged"
+      />
+      <StatsCard
+        title="Avg Risk : Reward"
+        value={formattedRiskReward}
+        icon={<Target className="h-4 w-4" />}
+        subtitle="Across all trades"
+      />
+      <StatsCard
+        title="Avg Profit"
+        value={formattedProfit}
+        valueTone={averageProfit >= 0 ? 'positive' : 'negative'}
+        icon={
+          averageProfit >= 0 ? (
+            <TrendingUp className="h-4 w-4" />
+          ) : (
+            <TrendingDown className="h-4 w-4" />
+          )
+        }
+        subtitle="Per trade"
       />
     </div>
   );

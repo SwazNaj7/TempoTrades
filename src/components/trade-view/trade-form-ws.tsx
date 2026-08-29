@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CalendarIcon, Loader2, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
@@ -11,7 +11,9 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
@@ -20,14 +22,14 @@ import { ImageUpload } from './image-upload';
 import { GradeBadge } from './grade-badge';
 import { toast } from 'sonner';
 import { uploadTrade, analyzeChartImage } from '@/app/actions';
+import { FALLBACK_INSTRUMENTS } from '@/lib/deriv/types';
+import {
+  fetchDerivActiveSymbols,
+  type DerivPair,
+  type DerivPairCatalog,
+  type PairGroupId,
+} from '@/lib/deriv/websocket';
 import type { AIFormData, SetupGrade, TradeDirection, TradeResult, TradeSession } from '@/types/trade';
-
-const instruments = [
-  'EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD',
-  'NAS/MNQ', 'S&P/MES', 'YM', 'RTY',
-  'BTCUSD', 'ETHUSD',
-  'XAUUSD', 'XAGUSD',
-];
 
 const timeframes = ['1m', '5m', '15m', '1h', '4h', 'D', 'W', 'M'];
 
@@ -44,7 +46,51 @@ const results: { value: TradeResult; label: string }[] = [
   { value: 'break_even', label: 'Break Even' },
 ];
 
-export function TradeForm() {
+const grades: { value: SetupGrade; label: string }[] = [
+  { value: 'A+', label: 'A+' },
+  { value: 'A', label: 'A' },
+  { value: 'A-', label: 'A-' },
+  { value: 'B', label: 'B' },
+  { value: 'C', label: 'C' },
+];
+
+function buildFallbackCatalog(): DerivPairCatalog {
+  const pairs: DerivPair[] = FALLBACK_INSTRUMENTS.map((inst) => {
+    const isSynthetic = inst.categoryId === 'synthetics';
+    const market = isSynthetic ? 'synthetic_index' : inst.categoryId;
+    return {
+      symbol: inst.symbol,
+      displayName: inst.displayName,
+      market,
+      marketLabel: isSynthetic ? 'Synthetic Indices' : inst.categoryId,
+      submarket: inst.categoryId,
+      submarketLabel: isSynthetic ? 'Synthetic Indices' : inst.categoryId,
+      group: isSynthetic ? 'synthetic' : 'standard',
+    };
+  });
+
+  const groups: DerivPairCatalog['groups'] = [
+    { id: 'standard', label: 'Standard', submarkets: [] },
+    { id: 'synthetic', label: 'Synthetic', submarkets: [] },
+  ];
+
+  for (const group of groups) {
+    const groupPairs = pairs.filter((p) => p.group === group.id);
+    const seen = new Map<string, DerivPair[]>();
+    for (const pair of groupPairs) {
+      if (!seen.has(pair.submarketLabel)) seen.set(pair.submarketLabel, []);
+      seen.get(pair.submarketLabel)!.push(pair);
+    }
+    group.submarkets = [...seen.entries()].map(([label, subPairs]) => ({
+      label,
+      pairs: subPairs,
+    }));
+  }
+
+  return { groups, pairs, source: 'fallback' };
+}
+
+export function WsTradeForm() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -52,13 +98,16 @@ export function TradeForm() {
   // Form state
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [catalog, setCatalog] = useState<DerivPairCatalog | null>(null);
+  const [isLoadingInstruments, setIsLoadingInstruments] = useState(true);
+  const [groupId, setGroupId] = useState<PairGroupId | ''>('');
   const [instrument, setInstrument] = useState('');
   const [timeframe, setTimeframe] = useState('');
   const [direction, setDirection] = useState<TradeDirection>('long');
   const [result, setResult] = useState<TradeResult>('take_profit');
-  const [session, setSession] = useState<TradeSession>('new_york_am');
-  const [entryPrice, setEntryPrice] = useState('');
-  const [exitPrice, setExitPrice] = useState('');
+  const [grade, setGrade] = useState<SetupGrade>('C');
+  const [session, setSession] = useState<TradeSession | ''>('');
+  const [riskReward, setRiskReward] = useState('');
   const [profitAmount, setProfitAmount] = useState('');
   const [openTime, setOpenTime] = useState(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
   const [closeTime, setCloseTime] = useState(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
@@ -67,10 +116,57 @@ export function TradeForm() {
   // AI Analysis state
   const [aiAnalysis, setAiAnalysis] = useState<AIFormData | null>(null);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadInstruments = async () => {
+      setIsLoadingInstruments(true);
+      try {
+        const data = await fetchDerivActiveSymbols();
+        if (cancelled) return;
+
+        setCatalog(data);
+        setGroupId((current) => current || 'standard');
+
+        if (data.source === 'fallback') {
+          toast.message('Using backup Deriv pairs', {
+            description: 'Live Deriv symbol feed was unavailable.',
+          });
+        }
+      } catch {
+        if (!cancelled) {
+          const fallback = buildFallbackCatalog();
+          setCatalog(fallback);
+          setGroupId('standard');
+          toast.error('Could not reach Deriv. Using backup pairs.');
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingInstruments(false);
+        }
+      }
+    };
+
+    void loadInstruments();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const activeGroup = useMemo(
+    () => catalog?.groups.find((g) => g.id === groupId) ?? null,
+    [catalog, groupId]
+  );
+
+  const handleGroupChange = (nextGroup: PairGroupId) => {
+    setGroupId(nextGroup);
+    setInstrument('');
+  };
+
   const handleImageChange = (file: File | null, preview: string | null) => {
     setImageFile(file);
     setImagePreview(preview);
-    setAiAnalysis(null); // Reset analysis when image changes
+    setAiAnalysis(null);
   };
 
   const handleAnalyze = async () => {
@@ -81,14 +177,14 @@ export function TradeForm() {
 
     setIsAnalyzing(true);
     try {
-      const result = await analyzeChartImage(imagePreview);
+      const response = await analyzeChartImage(imagePreview);
 
-      if (!result.success) {
-        toast.error(result.error || 'Analysis failed');
+      if (!response.success) {
+        toast.error(response.error || 'Analysis failed');
         return;
       }
 
-      const analysis = result.data;
+      const analysis = response.data;
       setAiAnalysis(analysis);
       setDirection(analysis.market_bias === 'bullish' ? 'long' : 'short');
       toast.success('Analysis complete!');
@@ -116,21 +212,22 @@ export function TradeForm() {
       } else if (result === 'stopped_out') {
         finalProfitAmount = -amount;
       } else {
-        finalProfitAmount = 0; // break_even
+        finalProfitAmount = 0;
       }
     }
 
     setIsSubmitting(true);
     try {
       const formData = {
-        setupGrade: (aiAnalysis?.setup_grade || 'C') as SetupGrade,
+        setupGrade: grade,
         tradeResult: result,
-        session: session,
+        session: session || null,
         pair: instrument,
         timeframe: timeframe,
         notes: notes || undefined,
         tradeDate: openTime,
         profit_amount: finalProfitAmount,
+        risk_reward: riskReward ? parseFloat(riskReward) : undefined,
       };
 
       const uploadResult = await uploadTrade(formData, imagePreview, aiAnalysis);
@@ -249,15 +346,21 @@ export function TradeForm() {
             <CardContent className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="instrument">Instrument *</Label>
-                  <Select value={instrument} onValueChange={setInstrument}>
-                    <SelectTrigger className="bg-background/50">
-                      <SelectValue placeholder="Select pair" />
+                  <Label htmlFor="group">Market *</Label>
+                  <Select
+                    value={groupId}
+                    onValueChange={(value) => handleGroupChange(value as PairGroupId)}
+                    disabled={isLoadingInstruments || !catalog}
+                  >
+                    <SelectTrigger id="group" className="w-full bg-background/50">
+                      <SelectValue
+                        placeholder={isLoadingInstruments ? 'Loading markets...' : 'Select market'}
+                      />
                     </SelectTrigger>
                     <SelectContent>
-                      {instruments.map((inst) => (
-                        <SelectItem key={inst} value={inst}>
-                          {inst}
+                      {catalog?.groups.map((group) => (
+                        <SelectItem key={group.id} value={group.id}>
+                          {group.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -265,9 +368,38 @@ export function TradeForm() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="instrument">Instrument *</Label>
+                  <Select
+                    value={instrument}
+                    onValueChange={setInstrument}
+                    disabled={isLoadingInstruments || !activeGroup || activeGroup.submarkets.length === 0}
+                  >
+                    <SelectTrigger id="instrument" className="w-full bg-background/50">
+                      <SelectValue
+                        placeholder={isLoadingInstruments ? 'Loading pairs...' : 'Select pair'}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {activeGroup?.submarkets.map((submarket) => (
+                        <SelectGroup key={submarket.label}>
+                          <SelectLabel>{submarket.label}</SelectLabel>
+                          {submarket.pairs.map((pair) => (
+                            <SelectItem key={pair.symbol} value={pair.displayName}>
+                              {pair.displayName}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
                   <Label htmlFor="timeframe">Timeframe *</Label>
                   <Select value={timeframe} onValueChange={setTimeframe}>
-                    <SelectTrigger className="bg-background/50">
+                    <SelectTrigger id="timeframe" className="w-full bg-background/50">
                       <SelectValue placeholder="Select TF" />
                     </SelectTrigger>
                     <SelectContent>
@@ -279,13 +411,11 @@ export function TradeForm() {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="direction">Direction</Label>
                   <Select value={direction} onValueChange={(v) => setDirection(v as TradeDirection)}>
-                    <SelectTrigger className="bg-background/50">
+                    <SelectTrigger id="direction" className="w-full bg-background/50">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -294,17 +424,35 @@ export function TradeForm() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
 
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="result">Result *</Label>
                   <Select value={result} onValueChange={(v) => setResult(v as TradeResult)}>
-                    <SelectTrigger className="bg-background/50">
+                    <SelectTrigger id="result" className="w-full bg-background/50">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {results.map((r) => (
                         <SelectItem key={r.value} value={r.value}>
                           {r.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="grade">Setup Grade *</Label>
+                  <Select value={grade} onValueChange={(v) => setGrade(v as SetupGrade)}>
+                    <SelectTrigger id="grade" className="w-full bg-background/50">
+                      <SelectValue placeholder="Select grade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {grades.map((g) => (
+                        <SelectItem key={g.value} value={g.value}>
+                          {g.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -317,8 +465,8 @@ export function TradeForm() {
                 <Label htmlFor="profitAmount" className="flex items-center gap-2">
                   Profit/Loss Amount
                   <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${
-                    result === 'take_profit' 
-                      ? 'bg-emerald-500/10 text-emerald-500' 
+                    result === 'take_profit'
+                      ? 'bg-emerald-500/10 text-emerald-500'
                       : result === 'stopped_out'
                       ? 'bg-red-500/10 text-red-500'
                       : 'bg-muted text-muted-foreground'
@@ -348,10 +496,13 @@ export function TradeForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="session">Session *</Label>
-                <Select value={session} onValueChange={(v) => setSession(v as TradeSession)}>
+                <Label htmlFor="session">Session</Label>
+                <Select
+                  value={session || undefined}
+                  onValueChange={(v) => setSession(v as TradeSession)}
+                >
                   <SelectTrigger className="bg-background/50">
-                    <SelectValue placeholder="Select session" />
+                    <SelectValue placeholder="Select session (optional)" />
                   </SelectTrigger>
                   <SelectContent>
                     {sessions.map((s) => (
@@ -363,33 +514,19 @@ export function TradeForm() {
                 </Select>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="entryPrice">Entry Price</Label>
+              <div className="space-y-2">
+                <Label htmlFor="riskReward">Risk : Reward</Label>
                   <Input
-                    id="entryPrice"
+                    id="riskReward"
                     type="number"
-                    step="any"
-                    placeholder="1.0850"
-                    value={entryPrice}
-                    onChange={(e) => setEntryPrice(e.target.value)}
+                    step="0.1"
+                    min="0"
+                    placeholder="2.0"
+                    value={riskReward}
+                    onChange={(e) => setRiskReward(e.target.value)}
                     className="bg-background/50"
                   />
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="exitPrice">Exit Price</Label>
-                  <Input
-                    id="exitPrice"
-                    type="number"
-                    step="any"
-                    placeholder="1.0900"
-                    value={exitPrice}
-                    onChange={(e) => setExitPrice(e.target.value)}
-                    className="bg-background/50"
-                  />
-                </div>
-              </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">

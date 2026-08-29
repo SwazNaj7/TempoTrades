@@ -56,7 +56,7 @@ export default async function JournalPage({ searchParams }: Props) {
           </p>
         </div>
         <Button asChild>
-          <Link href="/dashboard/journaling">
+          <Link href="/dashboard/trade">
             <Plus className="h-4 w-4 mr-2" />
             New Trade
           </Link>
@@ -92,7 +92,7 @@ export default async function JournalPage({ searchParams }: Props) {
             </Button>
           ) : (
             <Button asChild>
-              <Link href="/dashboard/journaling">Log Your First Trade</Link>
+              <Link href="/dashboard/trade">Log Your First Trade</Link>
             </Button>
           )}
         </div>

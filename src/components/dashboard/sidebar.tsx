@@ -33,7 +33,7 @@ interface Profile {
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Trade Journal', href: '/dashboard/journal', icon: BookOpen },
-  { name: 'New Trade', href: '/dashboard/journaling', icon: Upload },
+  { name: 'New Trade', href: '/dashboard/trade', icon: Upload },
   { name: 'Analytics', href: '/dashboard/analysis', icon: BarChart3 },
   { name: 'Tradeo', href: '/dashboard/chat', icon: MessageSquare },
 ];

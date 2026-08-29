@@ -143,6 +143,13 @@ export function TradeCard({ trade, href }: TradeCardProps) {
           </div>
         )}
 
+        {/* Risk:Reward display */}
+        {trade.risk_reward !== null && trade.risk_reward !== undefined && (
+          <div className="text-sm text-muted-foreground">
+            Risk:Reward <span className="font-medium text-foreground">{trade.risk_reward.toFixed(2)}R</span>
+          </div>
+        )}
+
         {/* Time info */}
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
           <Clock className="h-3.5 w-3.5" />

@@ -79,6 +79,21 @@ export default async function AnalysisPage() {
     }
   });
 
+  // Average risk:reward (only trades that have a value set)
+  const rrTrades = trades.filter(
+    (t) => t.risk_reward !== null && t.risk_reward !== undefined
+  );
+  const averageRiskReward =
+    rrTrades.length > 0
+      ? rrTrades.reduce((acc, t) => acc + (t.risk_reward as number), 0) / rrTrades.length
+      : 0;
+
+  // Average profit (signed profit_amount across all trades)
+  const averageProfit =
+    trades.length > 0
+      ? trades.reduce((acc, t) => acc + (t.profit_amount ?? 0), 0) / trades.length
+      : 0;
+
   // Session performance - calculated from actual trade data
   const sessionPerformance = {
     new_york_am: { wins: 0, total: 0 },
@@ -150,6 +165,8 @@ export default async function AnalysisPage() {
         winRate={winRate}
         averageGrade={averageGrade}
         thisWeekTrades={thisWeekTrades}
+        averageRiskReward={averageRiskReward}
+        averageProfit={averageProfit}
       />
 
       {/* Time-based Area Charts */}

@@ -2,12 +2,10 @@
 import { z } from 'zod';
 
 export const tradeSchema = z.object({
-  instrument: z.string().min(1, 'Instrument is required').max(20),
+  instrument: z.string().min(1, 'Instrument is required').max(80),
   timeframe: z.enum(['1m', '5m', '15m', '1h', '4h', 'D', 'W', 'M']),
   direction: z.enum(['long', 'short']),
   result: z.enum(['break_even', 'take_profit', 'stopped_out']),
-  entry_price: z.number().positive().optional(),
-  exit_price: z.number().positive().optional(),
   open_time: z.string().datetime(),
   close_time: z.string().datetime(),
   notes: z.string().max(5000).optional(),

@@ -4,7 +4,13 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { VISION_SYSTEM_PROMPT } from '@/lib/ai-prompting';
-import type { AIFormData, Trade, SetupGrade, TradeResult, TradeSession } from '@/types/trade';
+import type { AIFormData, Trade, SetupGrade, TradeDirection, TradeResult, TradeSession } from '@/types/trade';
+import {
+  FALLBACK_INSTRUMENTS,
+  INSTRUMENT_CATEGORIES,
+  getCachedDerivInstrumentCatalog,
+  type DerivInstrumentCatalog,
+} from '@/lib/deriv/symbols';
 
 // ============================================================================
 // Types
@@ -17,17 +23,52 @@ type ActionResult<T = void> =
 export interface TradeUploadData {
   setupGrade: SetupGrade;
   tradeResult: TradeResult;
-  session: TradeSession;
+  session: TradeSession | null;
   pair: string;
   timeframe: string;
   notes?: string;
   tradeDate: string;
   profit_amount?: number;
+  risk_reward?: number;
+}
+
+export interface UpdateTradeData {
+  instrument: string;
+  timeframe: string;
+  direction: TradeDirection | null;
+  result: TradeResult;
+  session: TradeSession | null;
+  setup_grade: SetupGrade;
+  risk_reward?: number | null;
+  profit_amount?: number | null;
+  open_time: string;
+  close_time: string;
+  notes?: string | null;
 }
 
 // ============================================================================
 // Trade Actions
 // ============================================================================
+
+/**
+ * Load Deriv instruments from TradingView symbol search (cached).
+ */
+export async function getDerivInstruments(): Promise<ActionResult<DerivInstrumentCatalog>> {
+  try {
+    const catalog = await getCachedDerivInstrumentCatalog();
+    return { success: true, data: catalog };
+  } catch (error) {
+    console.error('Failed to load Deriv instruments:', error);
+    return {
+      success: true,
+      data: {
+        categories: INSTRUMENT_CATEGORIES,
+        instruments: FALLBACK_INSTRUMENTS,
+        source: 'fallback',
+      },
+    };
+  }
+}
 
 /**
  * Analyze a chart image using Google Gemini Vision API
@@ -131,7 +172,7 @@ export async function uploadTrade(
     }
 
     // Basic validation
-    if (!formData.setupGrade || !formData.tradeResult || !formData.session || !formData.pair) {
+    if (!formData.setupGrade || !formData.tradeResult || !formData.pair) {
       return { 
         success: false, 
         error: 'Missing required fields' 
@@ -188,7 +229,7 @@ export async function uploadTrade(
       timeframe: formData.timeframe,
       direction: null,
       result: formData.tradeResult,
-      session: formData.session,
+      session: formData.session ?? null,
       open_time: isoDateTime,
       close_time: isoDateTime,
       image_url: imageUrl || '',
@@ -199,6 +240,7 @@ export async function uploadTrade(
       overlay_entry_y: aiAnalysis?.entry_coordinate?.y || null,
       notes: formData.notes || null,
       profit_amount: formData.profit_amount ?? null,
+      risk_reward: formData.risk_reward ?? null,
       created_at: new Date().toISOString(),
     };
 
@@ -293,6 +335,64 @@ export async function getTradeById(tradeId: string): Promise<ActionResult<Trade>
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Failed to fetch trade' 
+    };
+  }
+}
+
+/**
+ * Update an existing trade by ID (user-editable fields only).
+ */
+export async function updateTrade(
+  tradeId: string,
+  data: UpdateTradeData
+): Promise<ActionResult<Trade>> {
+  try {
+    const supabase = await createClient();
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    // Basic validation
+    if (!data.instrument || !data.timeframe || !data.result || !data.setup_grade) {
+      return { success: false, error: 'Missing required fields' };
+    }
+
+    const { data: updated, error } = await supabase
+      .from('trades')
+      .update({
+        instrument: data.instrument,
+        timeframe: data.timeframe,
+        direction: data.direction,
+        result: data.result,
+        session: data.session,
+        setup_grade: data.setup_grade,
+        risk_reward: data.risk_reward ?? null,
+        profit_amount: data.profit_amount ?? null,
+        open_time: data.open_time,
+        close_time: data.close_time,
+        notes: data.notes ?? null,
+      })
+      .eq('id', tradeId)
+      .eq('user_id', user.id)
+      .select()
+      .single();
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath('/dashboard');
+    revalidatePath('/dashboard/journal');
+    revalidatePath('/dashboard/analysis');
+    revalidatePath(`/dashboard/journal/${tradeId}`);
+
+    return { success: true, data: updated as Trade };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to update trade',
     };
   }
 }

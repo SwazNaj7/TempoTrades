@@ -18,9 +18,8 @@ export interface Trade {
   direction: TradeDirection | null;
   result: TradeResult;
   session: TradeSession | null;
-  entry_price: number | null;
-  exit_price: number | null;
   profit_amount: number | null;
+  risk_reward: number | null;
   open_time: string;
   close_time: string;
   image_url: string;
@@ -39,8 +38,6 @@ export interface TradeFormData {
   timeframe: string;
   direction: TradeDirection;
   result: TradeResult;
-  entry_price?: number;
-  exit_price?: number;
   open_time: string;
   close_time: string;
   notes?: string;
