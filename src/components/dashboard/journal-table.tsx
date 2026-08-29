@@ -45,7 +45,20 @@ export function JournalTable({ trades }: { trades: Trade[] }) {
   const [direction, setDirection] = useState<string>('all');
   const [grade, setGrade] = useState<string>('all');
   const [sort, setSort] = useState<{ key: 'date' | 'pnl'; dir: 'asc' | 'desc' }>({ key: 'date', dir: 'desc' });
-  const [view, setView] = useState<ViewMode>('compact');
+  const [view, setView] = useState<ViewMode>(() => {
+    if (typeof window === 'undefined') return 'compact';
+    const stored = window.localStorage.getItem('mechify.journal-view');
+    return stored === 'compact' || stored === 'cards' ? stored : 'compact';
+  });
+
+  const setPersistedView = (next: ViewMode) => {
+    setView(next);
+    try {
+      window.localStorage.setItem('mechify.journal-view', next);
+    } catch {
+      // Storage may be unavailable (private mode); ignore.
+    }
+  };
 
   const filtered = useMemo(() => {
     let list = trades;
@@ -125,7 +138,7 @@ export function JournalTable({ trades }: { trades: Trade[] }) {
           <div className="inline-flex rounded-lg border border-border/60 bg-muted/40 p-0.5">
             <button
               type="button"
-              onClick={() => setView('compact')}
+              onClick={() => setPersistedView('compact')}
               aria-pressed={view === 'compact'}
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
@@ -136,7 +149,7 @@ export function JournalTable({ trades }: { trades: Trade[] }) {
             </button>
             <button
               type="button"
-              onClick={() => setView('cards')}
+              onClick={() => setPersistedView('cards')}
               aria-pressed={view === 'cards'}
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',

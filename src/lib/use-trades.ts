@@ -55,9 +55,8 @@ async function fetchTrades(): Promise<CacheEntry> {
 }
 
 export function useTrades() {
-  const cached = readCache();
-  const [trades, setTrades] = useState<Trade[]>(cached ? cached.data : []);
-  const [loading, setLoading] = useState(() => (cached ? Date.now() - cached.ts > TTL : true));
+  const [trades, setTrades] = useState<Trade[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async (force = false) => {

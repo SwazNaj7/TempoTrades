@@ -129,12 +129,7 @@ export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) {
                 )}
               >
                 {active && (
-                  <span
-                    className={cn(
-                      'absolute top-1/2 h-6 w-1 -translate-y-1/2 rounded-full bg-primary',
-                      show ? 'left-1.5' : '-left-3'
-                    )}
-                  />
+                  <span className="absolute -left-3 top-1/2 h-6 w-1 -translate-y-1/2 rounded-full bg-primary" />
                 )}
                 <item.icon className="h-[18px] w-[18px] shrink-0" />
                 {show && <span className="truncate">{item.name}</span>}

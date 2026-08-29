@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Eye, EyeOff, UserPlus, TrendingUp, Check, X } from 'lucide-react';
+import { Eye, EyeOff, UserPlus, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { AuroraBackground } from '@/components/ui/aurora-background';
+import { BackgroundGradientAnimation } from '@/components/ui/background-gradient-animation';
 import { createClient } from '@/lib/supabase/client';
+import { checkUsernameAvailability } from '@/app/actions';
 import { toast } from 'sonner';
 
 // Google Icon component
@@ -48,7 +49,7 @@ export default function SignupPage() {
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const router = useRouter();
 
-  // Check username availability with debounce
+  // Check username availability with debounce (managed, server-side query)
   useEffect(() => {
     if (!username || username.length < 3) {
       setUsernameAvailable(null);
@@ -57,16 +58,14 @@ export default function SignupPage() {
 
     const timer = setTimeout(async () => {
       setIsCheckingUsername(true);
-      const supabase = createClient();
-      
-      const { data } = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('username', username.toLowerCase())
-        .single();
-      
-      setUsernameAvailable(!data);
-      setIsCheckingUsername(false);
+      try {
+        const result = await checkUsernameAvailability(username);
+        setUsernameAvailable(result.available);
+      } catch {
+        setUsernameAvailable(false);
+      } finally {
+        setIsCheckingUsername(false);
+      }
     }, 500);
 
     return () => clearTimeout(timer);
@@ -108,7 +107,13 @@ export default function SignupPage() {
       });
 
       if (error) {
-        toast.error(error.message);
+        // The profiles row is typically created by a DB trigger on sign-up; a
+        // duplicate username surfaces here as a unique-constraint violation.
+        if (error.code === '23505' || /username/i.test(error.message)) {
+          toast.error('Username is already taken. Please choose another.');
+        } else {
+          toast.error(error.message);
+        }
         return;
       }
 
@@ -124,6 +129,9 @@ export default function SignupPage() {
 
         if (profileError) {
           console.error('Profile update error:', profileError);
+          if (profileError.code === '23505' || /username/i.test(profileError.message)) {
+            toast.error('Username is already taken. Please choose another.');
+          }
         }
       }
 
@@ -159,18 +167,27 @@ export default function SignupPage() {
   };
 
   return (
-    <AuroraBackground>
-      <div className="min-h-screen flex items-center justify-center py-8 px-4 relative z-10">
-        <div className="w-full max-w-lg space-y-6">
-          {/* Logo */}
+    <div className="dark">
+      <BackgroundGradientAnimation
+        gradientBackgroundStart="rgb(0, 0, 30)"
+        gradientBackgroundEnd="rgb(0, 0, 0)"
+        firstColor="0, 150, 255"
+        secondColor="255, 0, 150"
+        thirdColor="0, 255, 200"
+        fourthColor="255, 100, 0"
+        fifthColor="150, 0, 255"
+        pointerColor="255, 255, 255"
+        size="80%"
+        blendingValue="hard-light"
+        containerClassName="min-h-screen! h-auto! w-full! max-w-full! overflow-x-hidden!"
+        className="min-h-screen! h-auto!"
+      >
+        <div className="relative z-10 min-h-screen w-full max-w-full overflow-x-hidden">
+          <div className="min-h-screen flex items-center justify-center py-8 px-4">
+            <div className="w-full max-w-xl space-y-6">
+          {/* Brand */}
           <div className="flex flex-col items-center space-y-2">
-            <div className="flex items-center space-x-2">
-              <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-primary-foreground" />
-              </div>
-              <span className="text-2xl font-light tracking-[0.14em]">TempoTrades</span>
-            </div>
-            <p className="text-muted-foreground text-sm">Mechanical Trading Journal</p>
+            <span className="text-3xl font-light tracking-[0.14em] text-white">TempoTrades</span>
           </div>
 
         <Card className="border-border/50 bg-card/50 backdrop-blur">
@@ -321,9 +338,11 @@ export default function SignupPage() {
               </Link>
             </p>
           </CardFooter>
-        </Card>
+            </Card>
+          </div>
+        </div>
       </div>
+      </BackgroundGradientAnimation>
     </div>
-    </AuroraBackground>
   );
 }

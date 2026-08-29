@@ -684,6 +684,83 @@ export async function uploadAvatar(formData: FormData): Promise<ActionResult<{ u
 // ============================================================================
 
 /**
+ * Usernames that should never be assignable to a regular account.
+ */
+const RESERVED_USERNAMES = new Set([
+  'admin',
+  'root',
+  'support',
+  'tempotrades',
+  'mechify',
+  'api',
+  'moderator',
+  'official',
+  'help',
+  'info',
+  'contact',
+  'security',
+  'null',
+  'undefined',
+  'anonymous',
+]);
+
+/**
+ * Result of a username availability lookup.
+ */
+export type UsernameCheckResult =
+  | { available: true }
+  | { available: false; reason: string };
+
+/**
+ * Check whether a username is available using a server-side, parameterized
+ * (managed) query. The value is normalized and validated here, then passed
+ * through Supabase's PostgREST client via `.eq()`, which binds it as a
+ * parameter — it is never interpolated into SQL, so the query is safe from SQL
+ * injection. An unauthenticated caller is fine because the lookup only selects
+ * the `username` column (governed by RLS).
+ */
+export async function checkUsernameAvailability(raw: string): Promise<UsernameCheckResult> {
+  // Normalize + validate input before it touches the database.
+  const username = (raw || '').trim().toLowerCase();
+
+  if (!username) {
+    return { available: false, reason: 'Username must be 3-20 characters (letters, numbers, underscore).' };
+  }
+  if (username.length < 3 || username.length > 20) {
+    return { available: false, reason: 'Username must be 3-20 characters.' };
+  }
+  if (!/^[a-z0-9_]+$/.test(username)) {
+    return { available: false, reason: 'Username can only contain letters, numbers, and underscores.' };
+  }
+  if (RESERVED_USERNAMES.has(username)) {
+    return { available: false, reason: 'This username is reserved.' };
+  }
+
+  try {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('username')
+      .eq('username', username)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Username availability check failed:', error);
+      // Fail closed: don't let a transient error grant a username we couldn't verify.
+      return { available: false, reason: 'Unable to verify username right now. Please try again.' };
+    }
+
+    return data
+      ? { available: false, reason: 'Username is already taken.' }
+      : { available: true };
+  } catch (error) {
+    console.error('Username check error:', error);
+    return { available: false, reason: 'Unable to verify username right now. Please try again.' };
+  }
+}
+
+/**
  * Sign out the current user
  */
 export async function signOut(): Promise<ActionResult> {

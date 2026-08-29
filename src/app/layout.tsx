@@ -35,6 +35,7 @@ export default function RootLayout({
           attribute="class"
           defaultTheme="light"
           enableSystem
+          disableTransitionOnChange
         >
           {children}
           <Toaster richColors position="top-right" />

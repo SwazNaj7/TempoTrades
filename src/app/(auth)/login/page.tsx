@@ -3,12 +3,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Eye, EyeOff, LogIn, TrendingUp } from 'lucide-react';
+import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { AuroraBackground } from '@/components/ui/aurora-background';
+import { BackgroundGradientAnimation } from '@/components/ui/background-gradient-animation';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 
@@ -93,18 +93,27 @@ export default function LoginPage() {
   };
 
   return (
-    <AuroraBackground>
-      <div className="min-h-screen flex items-center justify-center p-4 relative z-10">
-        <div className="w-full max-w-lg space-y-8">
-          {/* Logo */}
+    <div className="dark">
+      <BackgroundGradientAnimation
+        gradientBackgroundStart="rgb(0, 0, 30)"
+        gradientBackgroundEnd="rgb(0, 0, 0)"
+        firstColor="0, 150, 255"
+        secondColor="255, 0, 150"
+        thirdColor="0, 255, 200"
+        fourthColor="255, 100, 0"
+        fifthColor="150, 0, 255"
+        pointerColor="255, 255, 255"
+        size="80%"
+        blendingValue="hard-light"
+        containerClassName="min-h-screen! h-auto! w-full! max-w-full! overflow-x-hidden!"
+        className="min-h-screen! h-auto!"
+      >
+        <div className="relative z-10 min-h-screen w-full max-w-full overflow-x-hidden">
+          <div className="min-h-screen flex items-center justify-center p-4">
+            <div className="w-full max-w-xl space-y-8">
+          {/* Brand */}
           <div className="flex flex-col items-center space-y-2">
-            <div className="flex items-center space-x-2">
-              <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center">
-                <TrendingUp className="h-7 w-7 text-primary-foreground" />
-              </div>
-              <span className="text-3xl font-light tracking-[0.14em]">TempoTrades</span>
-            </div>
-            <p className="text-muted-foreground">Mechanical Trading Journal</p>
+            <span className="text-3xl font-light tracking-[0.14em] text-white">TempoTrades</span>
           </div>
 
         <Card className="border-border/50 bg-card/50 backdrop-blur">
@@ -202,9 +211,11 @@ export default function LoginPage() {
               </Link>
             </p>
           </CardFooter>
-        </Card>
+            </Card>
+          </div>
+        </div>
       </div>
+      </BackgroundGradientAnimation>
     </div>
-    </AuroraBackground>
   );
 }
