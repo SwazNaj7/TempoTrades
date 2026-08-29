@@ -18,6 +18,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { updateTrade } from '@/app/actions';
+import { invalidateTrades } from '@/lib/use-trades';
 import type { Trade, SetupGrade, TradeDirection, TradeResult, TradeSession } from '@/types/trade';
 
 const timeframes = ['1m', '5m', '15m', '1h', '4h', 'D', 'W', 'M'];
@@ -115,6 +116,7 @@ export function EditTradeForm({ trade }: EditTradeFormProps) {
       }
 
       toast.success('Trade updated successfully!');
+      invalidateTrades();
       router.push(`/dashboard/journal/${trade.id}`);
       router.refresh();
     } catch {

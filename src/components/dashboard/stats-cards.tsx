@@ -30,7 +30,7 @@ export function StatsCard({
   return (
     <Card
       className={cn(
-        'bg-card/50 backdrop-blur border-border/50',
+        '!bg-white/35 dark:!bg-zinc-950/70 backdrop-blur-md border-white/40 dark:border-white/10',
         className
       )}
     >
@@ -47,7 +47,7 @@ export function StatsCard({
       <CardContent>
         <div
           className={cn(
-            'text-3xl font-bold tracking-tight',
+            'text-3xl font-normal tracking-tight',
             valueTone === 'positive' && 'text-emerald-500',
             valueTone === 'negative' && 'text-red-500'
           )}

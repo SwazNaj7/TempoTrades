@@ -6,7 +6,6 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -16,6 +15,7 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
+  --font-sans: "Gilroy", var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
@@ -110,42 +110,42 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(0.97 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(0.98 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(0.98 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.94 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.94 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.94 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.90 0 0);
-  --input: oklch(0.90 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.96 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.94 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.90 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --radius: 0.75rem;
+  --background: transparent;
+  --foreground: oklch(0.22 0.02 60);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.02 60);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.02 60);
+  --primary: oklch(0.5 0.13 55);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.95 0.01 95);
+  --secondary-foreground: oklch(0.32 0.02 60);
+  --muted: oklch(0.955 0.01 95);
+  --muted-foreground: oklch(0.5 0.02 70);
+  --accent: oklch(0.95 0.015 95);
+  --accent-foreground: oklch(0.32 0.02 60);
+  --destructive: oklch(0.58 0.22 27);
+  --border: oklch(0.92 0.01 95);
+  --input: oklch(0.92 0.01 95);
+  --ring: oklch(0.55 0.12 55);
+  --chart-1: oklch(0.62 0.17 150);
+  --chart-2: oklch(0.62 0.16 200);
+  --chart-3: oklch(0.7 0.14 70);
+  --chart-4: oklch(0.6 0.18 30);
+  --chart-5: oklch(0.55 0.16 280);
+  --sidebar: oklch(0.99 0.008 95);
+  --sidebar-foreground: oklch(0.32 0.02 60);
+  --sidebar-primary: oklch(0.5 0.13 55);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.95 0.01 95);
+  --sidebar-accent-foreground: oklch(0.32 0.02 60);
+  --sidebar-border: oklch(0.92 0.01 95);
+  --sidebar-ring: oklch(0.6 0.04 70);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
+  --background: transparent;
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
   --card-foreground: oklch(0.985 0 0);
@@ -183,8 +183,36 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground font-light;
+    background-color: transparent;
+    background-image:
+      radial-gradient(60rem 32rem at 6% -10%, rgba(255, 203, 152, 0.50), transparent 60%),
+      radial-gradient(54rem 28rem at 98% 0%, rgba(183, 197, 255, 0.46), transparent 58%),
+      radial-gradient(50rem 32rem at 50% 118%, rgba(158, 226, 195, 0.42), transparent 60%);
+    background-attachment: fixed;
   }
+  /* Smooth, app-wide theme transition */
+  *,
+  *::before,
+  *::after {
+    transition:
+      background-color 0.4s ease,
+      border-color 0.4s ease,
+      color 0.4s ease,
+      fill 0.4s ease,
+      stroke 0.4s ease;
+  }
+}
+
+/* Dark mode: mostly grey base with a black gradient */
+.dark body {
+  background-color: #232323;
+  background-image:
+    radial-gradient(60rem 34rem at 8% -12%, rgba(0, 0, 0, 0.55), transparent 60%),
+    radial-gradient(54rem 30rem at 95% 4%, rgba(0, 0, 0, 0.5), transparent 58%),
+    radial-gradient(50rem 34rem at 50% 120%, rgba(0, 0, 0, 0.65), transparent 60%),
+    linear-gradient(180deg, #2c2c2c 0%, #0c0c0c 100%);
+  background-attachment: fixed;
 }
 
 /* Chart axis text styling for Recharts */
@@ -195,4 +223,90 @@
 .stroke-border\/30 {
   stroke: var(--border);
   stroke-opacity: 0.3;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Gilroy (licensed). The UI uses the Light weight (300). Drop the .woff2
+   files into /public/fonts to use the real font; otherwise the stack falls
+   back to Poppins (loaded via next/font). */
+@font-face {
+  font-family: "Gilroy";
+  src: url("/fonts/Gilroy-Light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gilroy";
+  src: url("/fonts/Gilroy-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gilroy";
+  src: url("/fonts/Gilroy-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gilroy";
+  src: url("/fonts/Gilroy-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Gilroy";
+  src: url("/fonts/Gilroy-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Glass surfaces: every .bg-card becomes a frosted pane over the gradient */
+.bg-card {
+  background-color: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border-color: rgba(255, 255, 255, 0.65);
+  box-shadow: 0 10px 30px -12px rgba(80, 60, 30, 0.18);
+}
+
+/* Dark mode glass: cards turn near-black */
+.dark .bg-card {
+  background-color: rgba(15, 15, 15, 0.7);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.5);
 }

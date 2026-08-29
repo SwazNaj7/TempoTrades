@@ -14,6 +14,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { deleteTrade } from '@/app/actions';
+import { invalidateTrades } from '@/lib/use-trades';
 import { toast } from 'sonner';
 
 interface DeleteTradeButtonProps {
@@ -31,6 +32,7 @@ export function DeleteTradeButton({ tradeId }: DeleteTradeButtonProps) {
 
     if (result.success) {
       toast.success('Trade deleted successfully');
+      invalidateTrades();
       router.push('/dashboard/journal');
       router.refresh();
     } else {

@@ -7,6 +7,14 @@ import { cn } from '@/lib/utils';
 import {
   AreaChart,
   Area,
+  BarChart,
+  Bar,
+  Cell,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -256,7 +264,7 @@ export function TradesOverTimeChart({ trades }: TradesOverTimeProps) {
                   <stop offset="95%" stopColor="rgb(99, 102, 241)" stopOpacity={0.05} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" className="stroke-foreground/15" vertical={false} />
               <XAxis
                 dataKey="date"
                 className="text-xs fill-foreground"
@@ -417,7 +425,7 @@ export function ProfitOverTimeChart({ trades }: ProfitOverTimeProps) {
                   <stop offset="95%" stopColor="rgb(248, 113, 113)" stopOpacity={0.05} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border/30" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" className="stroke-foreground/15" vertical={false} />
               <XAxis
                 dataKey="date"
                 className="text-xs fill-foreground"
@@ -457,6 +465,206 @@ export function ProfitOverTimeChart({ trades }: ProfitOverTimeProps) {
                 fillOpacity={1}
                 fill={totalProfit >= 0 ? 'url(#profitGradient)' : 'url(#lossGradient)'}
                 strokeWidth={2.5}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+interface DailyPnLProps {
+  trades: Trade[];
+  days?: number;
+}
+
+export function DailyPnLChart({ trades, days = 14 }: DailyPnLProps) {
+  const data = (() => {
+    const buckets: Record<string, { date: string; timestamp: number; pl: number; wins: number; losses: number }> = {};
+    const sorted = [...trades]
+      .filter((t) => t.profit_amount !== null && t.profit_amount !== undefined)
+      .sort((a, b) => new Date(a.open_time).getTime() - new Date(b.open_time).getTime());
+
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = format(startOfDay(d), 'MMM d');
+      buckets[key] = { date: key, timestamp: startOfDay(d).getTime(), pl: 0, wins: 0, losses: 0 };
+    }
+
+    sorted.forEach((t) => {
+      const key = format(startOfDay(new Date(t.open_time)), 'MMM d');
+      if (buckets[key]) {
+        const p = t.profit_amount || 0;
+        buckets[key].pl += p;
+        if (p >= 0) buckets[key].wins += 1;
+        else buckets[key].losses += 1;
+      }
+    });
+
+    return Object.values(buckets);
+  })();
+
+  return (
+    <Card className="bg-card border-border/60 shadow-sm">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium">Daily P&L</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={260}>
+          <BarChart data={data} margin={{ top: 10, right: 6, left: 6, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" className="stroke-foreground/15" vertical={false} />
+            <XAxis
+              dataKey="date"
+              tick={{ fontSize: 10 }}
+              axisLine={false}
+              tickLine={false}
+              interval="preserveStartEnd"
+              minTickGap={16}
+            />
+            <YAxis
+              tick={{ fontSize: 10 }}
+              axisLine={false}
+              tickLine={false}
+              width={44}
+              tickFormatter={(v) => `$${v}`}
+            />
+            <Tooltip
+              cursor={{ fill: 'var(--muted)', fillOpacity: 0.4 }}
+              contentStyle={{
+                backgroundColor: 'var(--popover)',
+                border: '1px solid var(--border)',
+                borderRadius: '10px',
+                color: 'var(--popover-foreground)',
+                fontSize: 12,
+              }}
+              formatter={(value) => [
+                `${Number(value) >= 0 ? '+' : ''}${Number(value).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}`,
+                'P&L',
+              ]}
+            />
+            <Bar dataKey="pl" radius={[4, 4, 4, 4]} maxBarSize={28}>
+              {data.map((entry, index) => (
+                <Cell key={index} fill={entry.pl >= 0 ? 'var(--chart-1)' : 'var(--chart-4)'} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface PerformanceRadarProps {
+  data: { metric: string; value: number; fullMark: number }[];
+}
+
+export function PerformanceRadar({ data }: PerformanceRadarProps) {
+  return (
+    <Card className="bg-card border-border/60 shadow-sm">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium">Performance Profile</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={260}>
+          <RadarChart data={data} outerRadius="75%">
+            <PolarGrid stroke="var(--muted-foreground)" />
+            <PolarAngleAxis dataKey="metric" tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} />
+            <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
+            <Radar
+              dataKey="value"
+              stroke="var(--chart-2)"
+              fill="var(--chart-2)"
+              fillOpacity={0.35}
+              strokeWidth={2}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: 'var(--popover)',
+                border: '1px solid var(--border)',
+                borderRadius: '10px',
+                color: 'var(--popover-foreground)',
+                fontSize: 12,
+              }}
+              formatter={(value) => [`${Number(value) || 0}/100`, 'Score']}
+            />
+          </RadarChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface EquityCurveProps {
+  trades: Trade[];
+}
+
+export function EquityCurveChart({ trades }: EquityCurveProps) {
+  const data = (() => {
+    const sorted = [...trades]
+      .filter((t) => t.profit_amount !== null && t.profit_amount !== undefined)
+      .sort((a, b) => new Date(a.open_time).getTime() - new Date(b.open_time).getTime());
+    const points: { date: string; equity: number }[] = [];
+    for (const t of sorted) {
+      const prev = points.length ? points[points.length - 1].equity : 0;
+      points.push({
+        date: format(new Date(t.open_time), 'MMM d'),
+        equity: prev + (t.profit_amount || 0),
+      });
+    }
+    return points;
+  })();
+
+  const last = data.length ? data[data.length - 1].equity : 0;
+
+  return (
+    <Card className="bg-card border-border/60 shadow-sm">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm font-medium">Equity Curve</CardTitle>
+          <span className={cn('text-sm font-semibold', last >= 0 ? 'text-emerald-600' : 'text-red-600')}>
+            {last >= 0 ? '+' : ''}
+            {last.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+          </span>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {data.length === 0 ? (
+          <div className="flex h-[220px] items-center justify-center text-sm text-muted-foreground">
+            No P&L data yet
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <AreaChart data={data} margin={{ top: 10, right: 6, left: 6, bottom: 0 }}>
+              <defs>
+                <linearGradient id="equityGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="var(--chart-2)" stopOpacity={0.45} />
+                  <stop offset="95%" stopColor="var(--chart-2)" stopOpacity={0.03} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-foreground/15" vertical={false} />
+              <XAxis dataKey="date" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} minTickGap={24} />
+              <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} width={48} tickFormatter={(v) => `$${v}`} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'var(--popover)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '10px',
+                  color: 'var(--popover-foreground)',
+                  fontSize: 12,
+                }}
+                formatter={(value) => [
+                  `${Number(value) >= 0 ? '+' : ''}${Number(value).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}`,
+                  'Equity',
+                ]}
+              />
+              <Area
+                type="monotone"
+                dataKey="equity"
+                stroke="var(--chart-2)"
+                strokeWidth={2.5}
+                fill="url(#equityGradient)"
               />
             </AreaChart>
           </ResponsiveContainer>

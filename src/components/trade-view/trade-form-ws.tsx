@@ -22,6 +22,7 @@ import { ImageUpload } from './image-upload';
 import { GradeBadge } from './grade-badge';
 import { toast } from 'sonner';
 import { uploadTrade, analyzeChartImage } from '@/app/actions';
+import { invalidateTrades } from '@/lib/use-trades';
 import { FALLBACK_INSTRUMENTS } from '@/lib/deriv/types';
 import {
   fetchDerivActiveSymbols,
@@ -238,6 +239,7 @@ export function WsTradeForm() {
       }
 
       toast.success('Trade logged successfully!');
+      invalidateTrades();
       router.push('/dashboard/journal');
       router.refresh();
     } catch {

@@ -37,7 +37,7 @@ export default async function TradeDetailPage({ params }: TradeDetailPageProps) 
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <h1 className="text-2xl font-bold">{trade.instrument}</h1>
           <span className="text-sm text-muted-foreground bg-muted px-2 py-1 rounded">
             {trade.timeframe}
@@ -59,7 +59,7 @@ export default async function TradeDetailPage({ params }: TradeDetailPageProps) 
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <GradeBadge grade={trade.setup_grade} />
           <ResultBadge result={trade.result} />
           <Button variant="outline" size="sm" asChild>

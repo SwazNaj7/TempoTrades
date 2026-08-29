@@ -168,7 +168,7 @@ export default function SignupPage() {
               <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
                 <TrendingUp className="h-6 w-6 text-primary-foreground" />
               </div>
-              <span className="text-2xl font-bold">Mechify</span>
+              <span className="text-2xl font-light tracking-[0.14em]">TempoTrades</span>
             </div>
             <p className="text-muted-foreground text-sm">Mechanical Trading Journal</p>
           </div>

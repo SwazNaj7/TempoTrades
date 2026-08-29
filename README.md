@@ -1,4 +1,4 @@
-# Mechify - AI-Powered Trading Journal
+# TempoTrades - AI-Powered Trading Journal
 
 <p align="center">
   <strong>Master Your Trading with AI-Powered Journaling</strong>

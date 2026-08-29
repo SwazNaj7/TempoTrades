@@ -28,8 +28,8 @@ export function HomeContent() {
           {/* Navigation */}
           <div className="container mx-auto px-4 py-4 md:py-6">
             <nav className="flex justify-between items-center">
-              <h1 className="text-xl md:text-2xl font-bold text-white">
-                Mechify
+              <h1 className="text-xl md:text-2xl font-light tracking-[0.14em] text-white">
+                TempoTrades
               </h1>
               <div className="flex items-center gap-1 md:gap-2">
                 <Link href="/login">
@@ -131,7 +131,7 @@ export function HomeContent() {
 
             {/* Footer */}
             <footer className="mt-16 md:mt-24 text-center text-xs md:text-sm text-white/40 pb-6 md:pb-8">
-              <p>© {new Date().getFullYear()} Mechify. Built for serious traders.</p>
+              <p>© {new Date().getFullYear()} TempoTrades. Built for serious traders.</p>
             </footer>
           </div>
         </div>

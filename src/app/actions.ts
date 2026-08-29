@@ -286,7 +286,9 @@ export async function getTrades(): Promise<ActionResult<Trade[]>> {
 
     const { data: trades, error } = await supabase
       .from('trades')
-      .select('*')
+      .select(
+        'id, user_id, instrument, timeframe, direction, result, session, profit_amount, risk_reward, open_time, close_time, setup_grade, notes, image_url, created_at'
+      )
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 

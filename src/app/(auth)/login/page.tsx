@@ -102,7 +102,7 @@ export default function LoginPage() {
               <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center">
                 <TrendingUp className="h-7 w-7 text-primary-foreground" />
               </div>
-              <span className="text-3xl font-bold">Mechify</span>
+              <span className="text-3xl font-light tracking-[0.14em]">TempoTrades</span>
             </div>
             <p className="text-muted-foreground">Mechanical Trading Journal</p>
           </div>
