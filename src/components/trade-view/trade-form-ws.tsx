@@ -225,6 +225,7 @@ export function WsTradeForm() {
         session: session || null,
         pair: instrument,
         timeframe: timeframe,
+        direction: direction,
         notes: notes || undefined,
         tradeDate: openTime,
         profit_amount: finalProfitAmount,

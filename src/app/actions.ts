@@ -26,6 +26,7 @@ export interface TradeUploadData {
   session: TradeSession | null;
   pair: string;
   timeframe: string;
+  direction: TradeDirection;
   notes?: string;
   tradeDate: string;
   profit_amount?: number;
@@ -228,7 +229,7 @@ export async function uploadTrade(
       user_id: user.id,
       instrument: formData.pair,
       timeframe: formData.timeframe,
-      direction: null,
+      direction: formData.direction,
       result: formData.tradeResult,
       session: formData.session ?? null,
       open_time: isoDateTime,
