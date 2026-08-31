@@ -106,14 +106,33 @@ export default function SignupPage() {
         },
       });
 
-      if (error) {
-        // The profiles row is typically created by a DB trigger on sign-up; a
-        // duplicate username surfaces here as a unique-constraint violation.
-        if (error.code === '23505' || /username/i.test(error.message)) {
-          toast.error('Username is already taken. Please choose another.');
-        } else {
-          toast.error(error.message);
+      // Handle duplicate email: when "Prevent Email Enumeration Attacks" is ON
+      // (default), signUp succeeds even if email exists, but data.user will be null
+      if (error || !data.user) {
+        // Handle duplicate email: when "Prevent Email Enumeration Attacks" is ON
+        // (default), signUp succeeds even if email exists, but data.user will be null
+        if (!data.user) {
+          toast.error('This email is already in use. Please sign in instead.');
+          return;
         }
+
+        // Error-based validation (username taken, etc.)
+        if (error && error.code === '23505') {
+          toast.error('Username is already taken. Please choose another.');
+          return;
+        }
+
+        if (error && /username/i.test(error.message)) {
+          toast.error('Username is already taken. Please choose another.');
+          return;
+        }
+
+        if (error) {
+          toast.error(error.message);
+          return;
+        }
+
+        toast.error('Registration failed. Please try again.');
         return;
       }
 

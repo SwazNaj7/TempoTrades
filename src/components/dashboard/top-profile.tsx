@@ -7,6 +7,7 @@ import { ChevronDown, Settings, LogOut } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { createClient } from '@/lib/supabase/client';
+import { invalidateTrades } from '@/lib/use-trades';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,6 +68,7 @@ export function TopProfile() {
 
   const handleLogout = async () => {
     await createClient().auth.signOut();
+    invalidateTrades();
     router.push('/login');
     router.refresh();
   };
